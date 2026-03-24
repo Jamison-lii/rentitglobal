@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { RentalCard } from '@/components/RentalCard';
 import { ChevronRight } from 'lucide-react-native';
+import React from 'react';
 
 const activeRentals = [
   {
@@ -111,6 +112,7 @@ export default function RentalsScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    paddingTop: 40,
     flex: 1,
     backgroundColor: '#F5F6F8',
   },

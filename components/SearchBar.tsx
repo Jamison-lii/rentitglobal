@@ -1,5 +1,6 @@
 import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Search, SlidersHorizontal } from 'lucide-react-native';
+import React from 'react';
 
 interface SearchBarProps {
   value: string;
@@ -56,10 +57,11 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    marginLeft: 10,
+    marginLeft: 5,
     fontSize: 15,
     fontFamily: 'Inter-Regular',
     color: '#0F1C2E',
+    
   },
   filterButton: {
     backgroundColor: '#FFFFFF',

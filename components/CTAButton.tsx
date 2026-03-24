@@ -1,3 +1,4 @@
+import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
 
 interface CTAButtonProps {
@@ -37,7 +38,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryButton: {
-    backgroundColor: '#2F80ED',
+    backgroundColor: '#0F1C2E',
   },
   secondaryButton: {
     backgroundColor: '#FFFFFF',

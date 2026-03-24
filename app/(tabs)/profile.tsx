@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { ProfileStatCard } from '@/components/ProfileStatCard';
 import { ChevronRight, CreditCard, Shield, Settings, Headphones } from 'lucide-react-native';
+import React from 'react';
 
 const menuItems = [
   {
@@ -67,11 +68,11 @@ export default function ProfileScreen() {
             <Text style={styles.memberSince}>ELITE MEMBER • {profile.memberSince}</Text>
           </View>
 
-          <View style={styles.statsRow}>
+        {/*  <View style={styles.statsRow}>
             <ProfileStatCard value={profile.rating} label="Rating" />
             <ProfileStatCard value={profile.reviews} label="Reviews" />
             <ProfileStatCard value={`${profile.trustScore}%`} label="Trust Score" />
-          </View>
+          </View>*/}
 
           <View style={styles.verificationCard}>
             <View style={styles.verificationHeader}>
@@ -130,6 +131,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    paddingTop: 40,
     flex: 1,
     backgroundColor: '#F5F6F8',
   },

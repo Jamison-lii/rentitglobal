@@ -1,5 +1,6 @@
+import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { Heart } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface ItemCardProps {
   id: string;
@@ -24,23 +25,24 @@ export function ItemCard({
   onFavoritePress,
 }: ItemCardProps) {
   return (
-    <TouchableOpacity onPress={onPress} style={styles.card} activeOpacity={0.7}>
+    <TouchableOpacity onPress={onPress} style={styles.card} activeOpacity={0.85}>
       <View style={styles.imageContainer}>
         <Image source={{ uri: imageUrl }} style={styles.image} />
 
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{rating} ⭐ Trusted Owner</Text>
+          <Ionicons name="star" size={12} color="#F59E0B" style={styles.badgeIcon} />
+          <Text style={styles.badgeText}>{rating} Trusted Owner</Text>
         </View>
 
         <TouchableOpacity
           style={styles.favoriteButton}
           onPress={onFavoritePress}
-          activeOpacity={0.7}>
-          <Heart
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name={isFavorite ? 'heart' : 'heart-outline'}
             size={20}
             color={isFavorite ? '#EF4444' : '#FFFFFF'}
-            fill={isFavorite ? '#EF4444' : 'transparent'}
-            strokeWidth={2}
           />
         </TouchableOpacity>
       </View>
@@ -50,7 +52,7 @@ export function ItemCard({
         <Text style={styles.subtitle}>{subtitle}</Text>
 
         <View style={styles.priceContainer}>
-          <Text style={styles.price}>${price}/day</Text>
+          <Text style={styles.price}>{price}CFA/day</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -68,6 +70,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
     overflow: 'hidden',
+    marginHorizontal: 10,
   },
   imageContainer: {
     position: 'relative',
@@ -87,10 +90,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  badgeIcon: {
+    marginRight: 6,
   },
   badgeText: {
     fontSize: 12,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: '#0F1C2E',
   },
   favoriteButton: {
@@ -109,18 +117,17 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 18,
-    fontFamily: 'Inter-Bold',
+    fontWeight: '700',
     color: '#0F1C2E',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
     color: '#6B7280',
     marginBottom: 12,
   },
   priceContainer: {
-    backgroundColor: '#2F80ED',
+    backgroundColor: '#0F1C2E',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
@@ -128,7 +135,7 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 16,
-    fontFamily: 'Inter-Bold',
+    fontWeight: '700',
     color: '#FFFFFF',
   },
 });

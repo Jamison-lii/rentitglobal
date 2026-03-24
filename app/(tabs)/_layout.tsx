@@ -1,5 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Search, Calendar, User } from 'lucide-react-native';
+import React from 'react';
+import '../../global.css';
 
 export default function TabLayout() {
   return (

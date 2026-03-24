@@ -4,21 +4,21 @@ import { useRouter } from 'expo-router';
 import { ItemCard } from '@/components/ItemCard';
 import { CategoryChip } from '@/components/CategoryChip';
 import { SearchBar } from '@/components/SearchBar';
+import React from 'react';
 
 const categories = [
-  { id: '1', name: 'Photography', icon: '📷' },
-  { id: '2', name: 'Drones', icon: '🚁' },
-  { id: '3', name: 'Electronics', icon: '📱' },
-  { id: '4', name: 'Audio', icon: '🎧' },
-  { id: '5', name: 'Outdoor', icon: '⛰️' },
+  { id: '1', name: 'Photography', icon: 'camera-outline' },
+  { id: '2', name: 'Drones', icon: 'airplane-outline' },
+  { id: '3', name: 'Electronics', icon: 'phone-portrait-outline' },
+  { id: '4', name: 'Audio', icon: 'headset-outline' },
+  { id: '5', name: 'Outdoor', icon: 'bicycle-outline' },
 ];
-
 const items = [
   {
     id: '1',
     name: 'Sony Alpha A7 IV',
     subtitle: 'Includes 24-70mm GM Lens',
-    price: 85,
+    price: 5000,
     rating: 5.0,
     imageUrl: 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=800',
   },
@@ -26,7 +26,7 @@ const items = [
     id: '2',
     name: 'DJI Mavic 3 Pro',
     subtitle: 'Fly More Combo Pack',
-    price: 120,
+    price: 5000,
     rating: 5.0,
     imageUrl: 'https://images.pexels.com/photos/2876511/pexels-photo-2876511.jpeg?auto=compress&cs=tinysrgb&w=800',
   },
@@ -34,7 +34,7 @@ const items = [
     id: '3',
     name: 'VanMoof S5 Electric Bike',
     subtitle: 'Gray Matter • Range 150km',
-    price: 45,
+    price: 2000,
     rating: 5.0,
     imageUrl: 'https://images.pexels.com/photos/276517/pexels-photo-276517.jpeg?auto=compress&cs=tinysrgb&w=800',
   },
@@ -71,12 +71,12 @@ export default function ExploreScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView  style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.greeting}>Hello, Alex</Text>
+          <Text className="text-red-600" style={styles.greeting}>Hello, Jamison</Text>
           <View style={styles.searchWrapper}>
-            <SearchBar
+            <SearchBar 
               value={searchQuery}
               onChangeText={setSearchQuery}
               onFilterPress={handleFilterPress}
@@ -102,7 +102,7 @@ export default function ExploreScreen() {
           </ScrollView>
         </View>
 
-        <View style={styles.section}>
+        <View className='px-10' style={styles.section}>
           <Text style={styles.sectionTitle}>Handpicked for You</Text>
           {items.map((item) => (
             <ItemCard
@@ -123,14 +123,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F6F8',
+    paddingTop: 40,
+    
   },
   scrollView: {
     flex: 1,
+    
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingTop: 10,
+    paddingBottom: 5,
   },
   greeting: {
     fontSize: 28,
@@ -139,10 +142,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   searchWrapper: {
-    marginBottom: 8,
+    marginBottom: 0,
   },
   section: {
-    marginTop: 24,
+    marginTop: 10,
+    
   },
   sectionTitle: {
     fontSize: 20,

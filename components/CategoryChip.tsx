@@ -1,49 +1,61 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React from 'react';
+import { Pressable, Text, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface CategoryChipProps {
   label: string;
   icon: string;
   isSelected?: boolean;
-  onPress: () => void;
+  onPress?: () => void;
 }
 
-export function CategoryChip({ label, icon, isSelected = false, onPress }: CategoryChipProps) {
+export function CategoryChip({
+  label,
+  icon,
+  isSelected = false,
+  onPress,
+}: CategoryChipProps) {
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      style={[styles.chip, isSelected && styles.chipSelected]}
-      activeOpacity={0.7}>
-      <Text style={styles.icon}>{icon}</Text>
-      <Text style={[styles.label, isSelected && styles.labelSelected]}>{label}</Text>
-    </TouchableOpacity>
+      style={[styles.container, isSelected && styles.containerSelected]}
+    >
+      <View style={styles.content}>
+        <Ionicons
+          name={icon as any}
+          size={18}
+          color={isSelected ? '#FFFFFF' : '#0F1C2E'}
+        />
+        <Text style={[styles.label, isSelected && styles.labelSelected]}>
+          {label}
+        </Text>
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  chip: {
+  container: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#E8ECF1',
+  },
+  containerSelected: {
+    backgroundColor: '#0F1C2E',
+    borderColor: '#0F1C2E',
+  },
+  content: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  chipSelected: {
-    backgroundColor: '#0F1C2E',
-  },
-  icon: {
-    fontSize: 18,
-    marginRight: 6,
   },
   label: {
+    marginLeft: 8,
     fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: '#0F1C2E',
   },
   labelSelected: {

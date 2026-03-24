@@ -1,5 +1,6 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { MessageCircle, MoveVertical as MoreVertical } from 'lucide-react-native';
+import React from 'react';
 
 interface RentalCardProps {
   itemName: string;
@@ -47,7 +48,7 @@ export function RentalCard({
       <View style={styles.actions}>
         <TouchableOpacity style={styles.messageButton} onPress={onMessagePress} activeOpacity={0.7}>
           <MessageCircle size={16} color="#FFFFFF" strokeWidth={2} />
-          <Text style={styles.messageText}>Message Owner</Text>
+          <Text style={styles.messageText}>Message</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuButton} onPress={onMenuPress} activeOpacity={0.7}>
