@@ -1,7 +1,9 @@
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { ProfileStatCard } from '@/components/ProfileStatCard';
 import { ChevronRight, CreditCard, Shield, Settings, Headphones } from 'lucide-react-native';
 import React from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 const menuItems = [
   {
@@ -32,6 +34,9 @@ const menuItems = [
 ];
 
 export default function ProfileScreen() {
+  const router = useRouter();
+const { logout } = useAuth();
+
   const profile = {
     name: 'Alexander Vance',
     avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -43,9 +48,10 @@ export default function ProfileScreen() {
     isVerified: true,
   };
 
-  const handleSignOut = () => {
-    console.log('Sign out');
-  };
+ const handleSignOut = async () => {
+  await logout();
+  router.replace('/login');
+};
 
   return (
     <SafeAreaView style={styles.container}>

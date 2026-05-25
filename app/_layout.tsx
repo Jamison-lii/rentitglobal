@@ -6,6 +6,7 @@ import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_7
 import * as SplashScreen from 'expo-splash-screen';
 import React from 'react';
 import "../global.css";
+import { AuthProvider } from '@/context/AuthContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,11 +32,14 @@ export default function RootLayout() {
 
   return (
     <>
+    <AuthProvider>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
+    </AuthProvider>
     </>
+   
   );
 }

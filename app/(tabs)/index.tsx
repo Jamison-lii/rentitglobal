@@ -1,82 +1,107 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, StyleSheet, SafeAreaView, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ItemCard } from '@/components/ItemCard';
 import { CategoryChip } from '@/components/CategoryChip';
 import { SearchBar } from '@/components/SearchBar';
 import React from 'react';
+import { useAuth } from '@/context/AuthContext';
 
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const categories = [
-  { id: '1', name: 'Photography', icon: 'camera-outline' },
-  { id: '2', name: 'Drones', icon: 'airplane-outline' },
-  { id: '3', name: 'Electronics', icon: 'phone-portrait-outline' },
-  { id: '4', name: 'Audio', icon: 'headset-outline' },
+  { id: '1', name: 'Electronics', icon: 'phone-portrait-outline' },
+  { id: '2', name: 'Events', icon: 'calendar-outline' },
+  { id: '3', name: 'Vehicles', icon: 'car-outline' },
+  { id: '4', name: 'Tools', icon: 'construct-outline' },
   { id: '5', name: 'Outdoor', icon: 'bicycle-outline' },
+  { id: '6', name: 'Audio', icon: 'headset-outline' },
+  { id: '7', name: 'Gaming', icon: 'game-controller-outline' },
+  { id: '8', name: 'Furniture', icon: 'bed-outline' },
+  { id: '9', name: 'Clothing', icon: 'shirt-outline' },
+  { id: '10', name: 'Sports', icon: 'football-outline' },
+  { id: '11', name: 'Photography', icon: 'camera-outline' },
 ];
-const items = [
-  {
-    id: '1',
-    name: 'Sony Alpha A7 IV',
-    subtitle: 'Includes 24-70mm GM Lens',
-    price: 5000,
-    rating: 5.0,
-    imageUrl: 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=800',
-  },
-  {
-    id: '2',
-    name: 'DJI Mavic 3 Pro',
-    subtitle: 'Fly More Combo Pack',
-    price: 5000,
-    rating: 5.0,
-    imageUrl: 'https://images.pexels.com/photos/2876511/pexels-photo-2876511.jpeg?auto=compress&cs=tinysrgb&w=800',
-  },
-  {
-    id: '3',
-    name: 'VanMoof S5 Electric Bike',
-    subtitle: 'Gray Matter • Range 150km',
-    price: 2000,
-    rating: 5.0,
-    imageUrl: 'https://images.pexels.com/photos/276517/pexels-photo-276517.jpeg?auto=compress&cs=tinysrgb&w=800',
-  },
-];
+
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
+
+  const fetchListings = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/listings`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError('Failed to load listings.');
+        return;
+      }
+
+      setListings(data.data.listings);
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchListings();
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchListings();
+  }, []);
 
   const handleFilterPress = () => {
     console.log('Filter pressed');
   };
 
-  const handleCategoryPress = (categoryId: string) => {
-    setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
-  };
+ const handleCategoryPress = (categoryId: string) => {
+  setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
+}
 
-  const handleFavoritePress = (itemId: string) => {
-    setFavorites((prev) => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(itemId)) {
-        newFavorites.delete(itemId);
-      } else {
-        newFavorites.add(itemId);
-      }
-      return newFavorites;
-    });
-  };
+ 
 
   const handleItemPress = (itemId: string) => {
     router.push(`/item/${itemId}`);
   };
 
+  // filter listings by search query and category
+  const filteredListings = listings.filter((listing: any) => {
+    const matchesSearch =
+      listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      listing.location_city.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCategory = selectedCategory
+      ? listing.category.toLowerCase() ===
+        categories.find((c) => c.id === selectedCategory)?.name.toLowerCase()
+      : true;
+
+    return matchesSearch && matchesCategory;
+  });
+
   return (
-    <SafeAreaView  style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0F1C2E" />
+        }>
         <View style={styles.header}>
-          <Text className="text-red-600" style={styles.greeting}>Hello, Jamison</Text>
+          <Text style={styles.greeting}>Hello, {user?.first_name} </Text>
           <View style={styles.searchWrapper}>
-            <SearchBar 
+            <SearchBar
               value={searchQuery}
               onChangeText={setSearchQuery}
               onFilterPress={handleFilterPress}
@@ -102,17 +127,37 @@ export default function ExploreScreen() {
           </ScrollView>
         </View>
 
-        <View className='px-10' style={styles.section}>
-          <Text style={styles.sectionTitle}>Handpicked for You</Text>
-          {items.map((item) => (
-            <ItemCard
-              key={item.id}
-              {...item}
-              onPress={() => handleItemPress(item.id)}
-              isFavorite={favorites.has(item.id)}
-              onFavoritePress={() => handleFavoritePress(item.id)}
-            />
-          ))}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {selectedCategory
+              ? categories.find((c) => c.id === selectedCategory)?.name
+              : 'Handpicked for You'}
+          </Text>
+
+          {loading ? (
+            <ActivityIndicator size="large" color="#0F1C2E" style={{ marginTop: 40 }} />
+          ) : error ? (
+            <Text style={styles.errorText}>{error}</Text>
+          ) : filteredListings.length === 0 ? (
+            <Text style={styles.emptyText}>No listings found.</Text>
+          ) : (
+           filteredListings.map((listing: any) => {
+  const itemWithImage = listing.listing_items?.find((item: any) => item.image) ?? listing.listing_items?.[0];
+  
+  return (
+    <ItemCard
+      key={listing.id}
+      id={listing.id}
+      name={listing.title}
+      subtitle={listing.location_city}
+      price={itemWithImage?.price_per_day ?? 0}
+      rating={5.0}
+      imageUrl={itemWithImage?.image ?? 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg'}
+      onPress={() => handleItemPress(listing.id)}
+    />
+  );
+})
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -124,11 +169,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F6F8',
     paddingTop: 40,
-    
   },
   scrollView: {
     flex: 1,
-    
   },
   header: {
     paddingHorizontal: 20,
@@ -146,7 +189,6 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: 10,
-    
   },
   sectionTitle: {
     fontSize: 20,
@@ -158,5 +200,19 @@ const styles = StyleSheet.create({
   categoriesScroll: {
     paddingHorizontal: 20,
     paddingBottom: 4,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    paddingHorizontal: 20,
+    marginTop: 20,
+  },
+  emptyText: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    paddingHorizontal: 20,
+    marginTop: 20,
   },
 });

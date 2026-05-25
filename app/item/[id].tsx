@@ -1,182 +1,197 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
+  View, Text, ScrollView, Image, TouchableOpacity,
+  StyleSheet, SafeAreaView, ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import {
-  ArrowLeft,
-  Share2,
-  Clock,
-  Camera,
-  Radio,
-  ChevronRight,
-} from 'lucide-react-native';
+import { ArrowLeft, Share2, Clock, Camera, Radio } from 'lucide-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CTAButton } from '@/components/CTAButton';
+import { useAuth } from '@/context/AuthContext';
+import React from 'react';
+
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function ItemDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const [currentImageIndex] = useState(0);
+  const { token } = useAuth();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [listing, setListing] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const item = {
-    id,
-    name: 'DJI Mavic 3 Pro – Cine Edition',
-    category: 'Drones',
-    price: 85,
-    pricingLabel: 'per day',
-    images: [
-      'https://images.pexels.com/photos/2876511/pexels-photo-2876511.jpeg?auto=compress&cs=tinysrgb&w=800',
-      'https://images.pexels.com/photos/3945683/pexels-photo-3945683.jpeg?auto=compress&cs=tinysrgb&w=800',
-    ],
-    features: [
-      { icon: Clock, label: 'Flight time', value: '46 min' },
-      { icon: Camera, label: 'Camera', value: '4/3 CMOS' },
-      { icon: Radio, label: 'Range', value: '15 km' },
-    ],
-    securityDeposit: 500,
-    description:
-      'The DJI Mavic 3 Pro offers flagship-level imaging quality, 4K recording, and an exceptional flight time. Perfect for professional cinematography projects requiring Apple ProRes recording capabilities.',
-    owner: {
-      name: 'Marcus Sterling',
-      avatar:
-        'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200',
-      rating: 4.9,
-      totalRentals: 128,
-      isVerified: true,
-    },
-    location: {
-      name: 'Checkpoint, CA',
-      distanceMiles: 12,
-      latitude: 34.0736,
-      longitude: -118.4004,
-    },
-    minimumRentalDuration: '1 day',
-    maximumRentalDuration: '7 days',
-    requiresVerification: true,
-    quantityAvailable: 2,
+  useEffect(() => {
+    fetchListing();
+  }, [id]);
+
+  const fetchListing = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/listings/${id}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError('Failed to load listing.');
+        return;
+      }
+
+      setListing(data.data.listing);
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  {/*
-    - In a real app, you would fetch the item details from an API using the `id` param.
-    -In real app, make sure the corresponding API endpoint returns all the necessary details for the item, including images, features, owner info, and location data.
-    -Make sure if this item is the kind of item that needs to have a security deposit, the API should return that information as well.  
-    -Make sure the description is long enough to test the "Read more" functionality.
-    -Make sure pickup location is there for pickup
-    
-    */}
+  const handleBack = () => router.back();
+  const handleShare = () => console.log('Share item');
+  const handleRequestRent = () => router.push(`/rent/${id}`);
 
-  const handleBack = () => {
-    router.back();
-  };
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#0F1C2E" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-  const handleShare = () => {
-    console.log('Share item');
-  };
+  if (error || !listing) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ color: '#DC2626', fontSize: 14, fontFamily: 'Inter-Medium' }}>
+            {error || 'Listing not found.'}
+          </Text>
+          <TouchableOpacity onPress={handleBack} style={{ marginTop: 16 }}>
+            <Text style={{ color: '#2F80ED', fontSize: 14, fontFamily: 'Inter-SemiBold' }}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-const handleRequestRent = () => {
-  router.push(`/rent/${id}`);
-};
+  // get all images from listing items
+  const images = listing.listing_items
+    ?.map((item: any) => item.image)
+    .filter(Boolean);
 
-  const handleMessageOwner = () => {
-    console.log('Message owner');
-  };
+  const hasImages = images && images.length > 0;
+  const displayImage = hasImages
+    ? images[currentImageIndex]
+    : 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg';
+
+  // get first item for price info
+  const firstItem = listing.listing_items?.[0];
+  const price = firstItem?.price_per_day
+    ? `${firstItem.price_per_day} CFA / day`
+    : firstItem?.price_per_hour
+    ? `${firstItem.price_per_hour} CFA / hour`
+    : 'Price not set';
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={handleBack}
-          style={styles.headerButton}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity onPress={handleBack} style={styles.headerButton} activeOpacity={0.7}>
           <ArrowLeft size={24} color="#0F1C2E" strokeWidth={2} />
         </TouchableOpacity>
-
         <Text style={styles.headerTitle}>Item Details</Text>
-
-      <TouchableOpacity
-          onPress={handleShare}
-          style={styles.headerButton}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity onPress={handleShare} style={styles.headerButton} activeOpacity={0.7}>
           <Share2 size={24} color="#0F1C2E" strokeWidth={2} />
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.imageContainer}>
-          <Image source={{ uri: item.images[currentImageIndex] }} style={styles.heroImage} />
-
-          <View style={styles.imageIndicators}>
-            {item.images.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.indicator,
-                  index === currentImageIndex && styles.indicatorActive,
-                ]}
-              />
-            ))}
-          </View>
+          <Image source={{ uri: displayImage }} style={styles.heroImage} />
+          {hasImages && images.length > 1 && (
+            <View style={styles.imageIndicators}>
+              {images.map((_: any, index: number) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => setCurrentImageIndex(index)}
+                  style={[
+                    styles.indicator,
+                    index === currentImageIndex && styles.indicatorActive,
+                  ]}
+                />
+              ))}
+            </View>
+          )}
         </View>
 
         <View style={styles.content}>
           <View style={styles.categoryBadge}>
             <Ionicons name="cube-outline" size={14} color="#2F80ED" />
-            <Text style={styles.categoryBadgeText}>{item.category}</Text>
+            <Text style={styles.categoryBadgeText}>{listing.category}</Text>
           </View>
 
-          <Text style={styles.itemName}>{item.name}</Text>
-          <Text style={styles.price}>
-            {item.price}CFA {item.pricingLabel}
-          </Text>
+          <Text style={styles.itemName}>{listing.title}</Text>
+          <Text style={styles.price}>{price}</Text>
 
-         {/* <View style={styles.features}>
-            {item.features.map((feature, index) => (
-              <View key={index} style={styles.featureItem}>
-                <feature.icon size={20} color="#6B7280" strokeWidth={2} />
-                <Text style={styles.featureLabel}>{feature.label}</Text>
-                <Text style={styles.featureValue}>{feature.value}</Text>
-              </View>
-            ))}
-          </View>*/}
+          {/* Listing Items */}
+          {listing.listing_items?.length > 0 && (
+            <View style={styles.itemsSection}>
+              <Text style={styles.sectionTitle}>Available Items</Text>
+              {listing.listing_items.map((item: any) => (
+                <View key={item.id} style={styles.itemRow}>
+                  <View style={styles.itemRowLeft}>
+                    {item.image ? (
+                      <Image source={{ uri: item.image }} style={styles.itemThumb} />
+                    ) : (
+                      <View style={[styles.itemThumb, styles.itemThumbPlaceholder]}>
+                        <Ionicons name="cube-outline" size={20} color="#9CA3AF" />
+                      </View>
+                    )}
+                    <View>
+                      <Text style={styles.itemRowName}>{item.name}</Text>
+                      <Text style={styles.itemRowQty}>{item.quantity_available} available</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.itemRowPrice}>
+                    {item.price_per_day
+                      ? `${item.price_per_day} CFA/day`
+                      : `${item.price_per_hour} CFA/hr`}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
 
           <View style={styles.metaGrid}>
             <View style={styles.metaCard}>
               <Ionicons name="layers-outline" size={18} color="#0F1C2E" />
-              <Text style={styles.metaTitle}>Available</Text>
-              <Text style={styles.metaValue}>{item.quantityAvailable} units</Text>
+              <Text style={styles.metaTitle}>Items</Text>
+              <Text style={styles.metaValue}>{listing.listing_items?.length ?? 0}</Text>
             </View>
 
             <View style={styles.metaCard}>
               <Ionicons name="time-outline" size={18} color="#0F1C2E" />
-              <Text style={styles.metaTitle}>Minimum</Text>
-              <Text style={styles.metaValue}>{item.minimumRentalDuration}</Text>
+              <Text style={styles.metaTitle}>Min Duration</Text>
+              <Text style={styles.metaValue}>
+                {firstItem?.minimum_rental_duration ?? '-'} day(s)
+              </Text>
             </View>
 
             <View style={styles.metaCard}>
               <Ionicons name="calendar-outline" size={18} color="#0F1C2E" />
-              <Text style={styles.metaTitle}>Maximum</Text>
-              <Text style={styles.metaValue}>{item.maximumRentalDuration}</Text>
+              <Text style={styles.metaTitle}>Max Duration</Text>
+              <Text style={styles.metaValue}>
+                {firstItem?.maximum_rental_duration ?? '-'} day(s)
+              </Text>
             </View>
 
             <View style={styles.metaCard}>
               <Ionicons
-                name={item.requiresVerification ? 'shield-checkmark-outline' : 'shield-outline'}
+                name={firstItem?.requires_verification ? 'shield-checkmark-outline' : 'shield-outline'}
                 size={18}
                 color="#0F1C2E"
               />
               <Text style={styles.metaTitle}>Verification</Text>
               <Text style={styles.metaValue}>
-                {item.requiresVerification ? 'Required' : 'Optional'}
+                {firstItem?.requires_verification ? 'Required' : 'Not Required'}
               </Text>
             </View>
           </View>
@@ -184,17 +199,14 @@ const handleRequestRent = () => {
           <View style={styles.depositCard}>
             <View style={styles.depositHeader}>
               <Text style={styles.depositTitle}>Refundable Security Deposit</Text>
-              <Text style={styles.depositAmount}>{item.securityDeposit}CFA</Text>
+              <Text style={styles.depositAmount}>500 CFA</Text>
             </View>
-
             <Text style={styles.depositSubtext}>
-              Protected by RentIt Guarantee
-
-               <Text style={styles.note}>Note</Text> A rental request can only be canceled within 20minutes of placing the request. After that, the owner has the right to accept or decline the cancellation based on their cancellation policy.
-              
-              </Text>
-            
-
+              Protected by RentIt Guarantee.{' '}
+              <Text style={styles.note}>Note</Text> A rental request can only be canceled within
+              20 minutes of placing the request. After that, the owner has the right to accept or
+              decline the cancellation based on their cancellation policy.
+            </Text>
             <TouchableOpacity activeOpacity={0.7}>
               <Text style={styles.learnMore}>Learn More</Text>
             </TouchableOpacity>
@@ -202,100 +214,44 @@ const handleRequestRent = () => {
 
           <View style={styles.descriptionSection}>
             <Text style={styles.sectionTitle}>Description</Text>
-
             <Text
               style={styles.description}
-              numberOfLines={showFullDescription ? undefined : 3}
-            >
-              {item.description}
-           
-             
+              numberOfLines={showFullDescription ? undefined : 3}>
+              {listing.description}
             </Text>
-
             <TouchableOpacity
               onPress={() => setShowFullDescription(!showFullDescription)}
-              activeOpacity={0.7}
-            >
+              activeOpacity={0.7}>
               <Text style={styles.readMore}>
                 {showFullDescription ? 'Read less' : 'Read more'}
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/*<View style={styles.ownerSection}>
-            <Text style={styles.sectionTitle}>Owner</Text>
-
-            <View style={styles.ownerCard}>
-              <Image source={{ uri: item.owner.avatar }} style={styles.ownerAvatar} />
-
-              <View style={styles.ownerInfo}>
-                <View style={styles.ownerNameRow}>
-                  <Text style={styles.ownerName}>{item.owner.name}</Text>
-                  {item.owner.isVerified && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={16}
-                      color="#2F80ED"
-                      style={styles.verifiedIcon}
-                    />
-                  )}
-                </View>
-
-                <View style={styles.ownerStats}>
-                  <Ionicons name="star" size={14} color="#F59E0B" />
-                  <Text style={styles.ownerRating}>{item.owner.rating}</Text>
-                  <Text style={styles.ownerRentals}>• {item.owner.totalRentals} rentals</Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                style={styles.messageOwnerButton}
-                onPress={handleMessageOwner}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.messageOwnerText}>Message</Text>
-              </TouchableOpacity>
-            </View>
-          </View> */}
-
           <View style={styles.locationSection}>
             <Text style={styles.sectionTitle}>Pickup Location</Text>
-
             <View style={styles.mapCard}>
               <View style={styles.mapPlaceholder}>
                 <Ionicons name="location" size={26} color="#2F80ED" />
               </View>
-
               <View style={styles.locationInfo}>
-                <Text style={styles.locationName}>{item.location.name}</Text>
-                <Text style={styles.locationDistance}>
-                  {item.location.distanceMiles} miles away
-                </Text>
+                <Text style={styles.locationName}>{listing.location_address}</Text>
+                <Text style={styles.locationDistance}>{listing.location_city}</Text>
               </View>
-
-              
             </View>
           </View>
-
-           
         </View>
-
-         
       </ScrollView>
 
       <View style={styles.footer}>
         <CTAButton title="Request Rent" onPress={handleRequestRent} />
-
       </View>
-
-      
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-
-  note:{
+  note: {
     color: '#EF4444',
   },
   container: {
@@ -385,29 +341,48 @@ const styles = StyleSheet.create({
     color: '#2F80ED',
     marginBottom: 20,
   },
-  features: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  itemsSection: {
     marginBottom: 24,
   },
-  featureItem: {
-    flex: 1,
+  itemRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
-    paddingVertical: 16,
+    padding: 12,
     borderRadius: 12,
-    marginHorizontal: 4,
+    marginBottom: 8,
   },
-  featureLabel: {
-    fontSize: 11,
+  itemRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  itemThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    resizeMode: 'cover',
+  },
+  itemThumbPlaceholder: {
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  itemRowName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0F1C2E',
+  },
+  itemRowQty: {
+    fontSize: 12,
     color: '#6B7280',
-    marginTop: 8,
+    marginTop: 2,
   },
-  featureValue: {
+  itemRowPrice: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#0F1C2E',
-    marginTop: 2,
+    color: '#2F80ED',
   },
   metaGrid: {
     flexDirection: 'row',
@@ -484,64 +459,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#2F80ED',
-  },
-  ownerSection: {
-    marginBottom: 24,
-  },
-  ownerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 16,
-  },
-  ownerAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    marginRight: 12,
-  },
-  ownerInfo: {
-    flex: 1,
-  },
-  ownerNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  ownerName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0F1C2E',
-  },
-  verifiedIcon: {
-    marginLeft: 6,
-  },
-  ownerStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ownerRating: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0F1C2E',
-    marginLeft: 4,
-  },
-  ownerRentals: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginLeft: 4,
-  },
-  messageOwnerButton: {
-    backgroundColor: '#0F1C2E',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  messageOwnerText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
   },
   locationSection: {
     marginBottom: 80,

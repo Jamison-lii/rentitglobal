@@ -21,7 +21,7 @@ export function ItemCard({
   rating,
   imageUrl,
   onPress,
-  isFavorite = false,
+ 
   onFavoritePress,
 }: ItemCardProps) {
   return (
@@ -34,17 +34,7 @@ export function ItemCard({
           <Text style={styles.badgeText}>{rating} Trusted Owner</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.favoriteButton}
-          onPress={onFavoritePress}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name={isFavorite ? 'heart' : 'heart-outline'}
-            size={20}
-            color={isFavorite ? '#EF4444' : '#FFFFFF'}
-          />
-        </TouchableOpacity>
+       
       </View>
 
       <View style={styles.content}>
