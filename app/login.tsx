@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform,  StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -19,6 +21,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+ 
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -79,17 +83,29 @@ export default function LoginScreen() {
             />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter your password"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry
-              style={styles.input}
-            />
-          </View>
+         <View style={styles.inputGroup}>
+  <Text style={styles.label}>Password</Text>
+
+  <View style={styles.passwordContainer}>
+    <TextInput
+      value={password}
+      onChangeText={setPassword}
+      placeholder="Enter your password"
+      placeholderTextColor="#9CA3AF"
+      secureTextEntry={!showPassword}
+      style={[styles.input, { flex: 1, borderWidth: 0 }]}
+    />
+
+    <TouchableOpacity
+      onPress={() => setShowPassword(!showPassword)}>
+      <Ionicons
+        name={showPassword ? 'eye-off' : 'eye'}
+        size={22}
+        color="#6B7280"
+      />
+    </TouchableOpacity>
+  </View>
+</View>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -124,6 +140,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 24,
+    paddingTop: 5,
   },
   title: {
     fontSize: 32,
@@ -195,4 +212,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: '#0F1C2E',
   },
+  passwordContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  borderRadius: 16,
+  borderWidth: 1,
+  borderColor: '#E5E7EB',
+  backgroundColor: '#F8FAFC',
+  paddingRight: 16,
+},
 });

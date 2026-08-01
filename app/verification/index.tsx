@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, SafeAreaView, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Alert, ActivityIndicator, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Upload, CheckCircle, Clock, XCircle } from 'lucide-react-native';
+import {
+  ArrowLeft, Upload, CheckCircle, Clock, XCircle,
+  CreditCard, BookOpen, ChevronDown, ChevronUp
+} from 'lucide-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/context/AuthContext';
 import { CTAButton } from '@/components/CTAButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -19,7 +23,6 @@ export default function VerificationScreen() {
   const [verification, setVerification] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-
   const [documentType, setDocumentType] = useState<'ID_CARD' | 'PASSPORT'>('ID_CARD');
   const [documentFront, setDocumentFront] = useState<any>(null);
   const [documentBack, setDocumentBack] = useState<any>(null);
@@ -35,9 +38,7 @@ export default function VerificationScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (res.ok) {
-        setVerification(data.data.verification);
-      }
+      if (res.ok) setVerification(data.data.verification);
     } catch (err) {
       console.error('Failed to fetch verification:', err);
     } finally {
@@ -51,16 +52,12 @@ export default function VerificationScreen() {
       Alert.alert('Permission required', 'Please allow access to your photo library.');
       return;
     }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.8,
     });
-
-    if (!result.canceled) {
-      setter(result.assets[0]);
-    }
+    if (!result.canceled) setter(result.assets[0]);
   };
 
   const takePhoto = async (setter: (img: any) => void) => {
@@ -69,15 +66,11 @@ export default function VerificationScreen() {
       Alert.alert('Permission required', 'Please allow access to your camera.');
       return;
     }
-
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       quality: 0.8,
     });
-
-    if (!result.canceled) {
-      setter(result.assets[0]);
-    }
+    if (!result.canceled) setter(result.assets[0]);
   };
 
   const handleImagePick = (setter: (img: any) => void) => {
@@ -129,7 +122,7 @@ export default function VerificationScreen() {
       }
 
       Alert.alert(
-        'Submitted! 🎉',
+        'Submitted!',
         'Your verification documents have been submitted. We will review them shortly.',
         [{ text: 'OK', onPress: () => router.back() }]
       );
@@ -151,18 +144,16 @@ export default function VerificationScreen() {
   };
 
   const getStatusIcon = () => {
-    if (!verification) return null;
-    switch (verification.status) {
-      case 'APPROVED': return <CheckCircle size={48} color="#10B981" />;
-      case 'PENDING': return <Clock size={48} color="#F59E0B" />;
-      case 'REJECTED': return <XCircle size={48} color="#EF4444" />;
+    switch (verification?.status) {
+      case 'APPROVED': return <CheckCircle size={64} color="#10B981" />;
+      case 'PENDING': return <Clock size={64} color="#F59E0B" />;
+      case 'REJECTED': return <XCircle size={64} color="#EF4444" />;
       default: return null;
     }
   };
 
   const getStatusMessage = () => {
-    if (!verification) return '';
-    switch (verification.status) {
+    switch (verification?.status) {
       case 'APPROVED': return 'Your identity has been verified successfully. You now have full access to RentIt.';
       case 'PENDING': return 'Your documents are under review. This usually takes 1-2 business days.';
       case 'REJECTED': return 'Your verification was rejected. Please resubmit with clear, valid documents.';
@@ -180,7 +171,7 @@ export default function VerificationScreen() {
     );
   }
 
-  // Show status screen if already submitted and not rejected
+  // Status screen
   if (verification && verification.status !== 'REJECTED') {
     return (
       <SafeAreaView style={styles.container}>
@@ -192,58 +183,60 @@ export default function VerificationScreen() {
           <View style={{ width: 40 }} />
         </View>
 
-        <View style={styles.statusScreen}>
-          {getStatusIcon()}
-          <Text style={[styles.statusTitle, { color: getStatusColor() }]}>
-            {verification.status === 'APPROVED' ? 'Verified!' : 'Under Review'}
-          </Text>
-          <Text style={styles.statusMessage}>{getStatusMessage()}</Text>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.statusScreen}>
+            {getStatusIcon()}
+            <Text style={[styles.statusTitle, { color: getStatusColor() }]}>
+              {verification.status === 'APPROVED' ? 'Verified!' : 'Under Review'}
+            </Text>
+            <Text style={styles.statusMessage}>{getStatusMessage()}</Text>
 
-          {/* Submitted documents preview */}
-          <View style={styles.submittedDocs}>
-            <Text style={styles.submittedDocsTitle}>Submitted Documents</Text>
-            <View style={styles.submittedDocsRow}>
-              <View style={styles.submittedDocItem}>
-                <Image source={{ uri: verification.document_front }} style={styles.submittedDocImage} />
-                <Text style={styles.submittedDocLabel}>Front</Text>
-              </View>
-              <View style={styles.submittedDocItem}>
-                <Image source={{ uri: verification.document_back }} style={styles.submittedDocImage} />
-                <Text style={styles.submittedDocLabel}>Back</Text>
-              </View>
-              <View style={styles.submittedDocItem}>
-                <Image source={{ uri: verification.selfie_image }} style={styles.submittedDocImage} />
-                <Text style={styles.submittedDocLabel}>Selfie</Text>
+            <View style={styles.submittedDocs}>
+              <Text style={styles.submittedDocsTitle}>Submitted Documents</Text>
+              <View style={styles.submittedDocsRow}>
+                <View style={styles.submittedDocItem}>
+                  <Image source={{ uri: verification.document_front }} style={styles.submittedDocImage} />
+                  <Text style={styles.submittedDocLabel}>Front</Text>
+                </View>
+                <View style={styles.submittedDocItem}>
+                  <Image source={{ uri: verification.document_back }} style={styles.submittedDocImage} />
+                  <Text style={styles.submittedDocLabel}>Back</Text>
+                </View>
+                <View style={styles.submittedDocItem}>
+                  <Image source={{ uri: verification.selfie_image }} style={styles.submittedDocImage} />
+                  <Text style={styles.submittedDocLabel}>Selfie</Text>
+                </View>
               </View>
             </View>
-          </View>
 
-          <View style={styles.submittedInfo}>
-            <View style={styles.submittedInfoRow}>
-              <Text style={styles.submittedInfoLabel}>Document Type</Text>
-              <Text style={styles.submittedInfoValue}>{verification.document_type}</Text>
-            </View>
-            <View style={styles.submittedInfoRow}>
-              <Text style={styles.submittedInfoLabel}>Submitted</Text>
-              <Text style={styles.submittedInfoValue}>
-                {new Date(verification.submitted_at).toDateString()}
-              </Text>
-            </View>
-            {verification.reviewed_at && (
+            <View style={styles.submittedInfo}>
               <View style={styles.submittedInfoRow}>
-                <Text style={styles.submittedInfoLabel}>Reviewed</Text>
+                <Text style={styles.submittedInfoLabel}>Document Type</Text>
+                <Text style={styles.submittedInfoValue}>{verification.document_type}</Text>
+              </View>
+              <View style={styles.submittedInfoRow}>
+                <Text style={styles.submittedInfoLabel}>Submitted</Text>
                 <Text style={styles.submittedInfoValue}>
-                  {new Date(verification.reviewed_at).toDateString()}
+                  {new Date(verification.submitted_at).toDateString()}
                 </Text>
               </View>
-            )}
+              {verification.reviewed_at && (
+                <View style={styles.submittedInfoRow}>
+                  <Text style={styles.submittedInfoLabel}>Reviewed</Text>
+                  <Text style={styles.submittedInfoValue}>
+                    {new Date(verification.reviewed_at).toDateString()}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
+          <View style={{ height: 40 }} />
+        </ScrollView>
       </SafeAreaView>
     );
   }
 
-  // Show submission form if not submitted or rejected
+  // Submission form
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -281,6 +274,11 @@ export default function VerificationScreen() {
             <TouchableOpacity
               style={[styles.toggleBtn, documentType === 'ID_CARD' && styles.toggleActive]}
               onPress={() => setDocumentType('ID_CARD')}>
+              <CreditCard
+                size={16}
+                color={documentType === 'ID_CARD' ? '#FFFFFF' : '#6B7280'}
+                strokeWidth={2}
+              />
               <Text style={documentType === 'ID_CARD' ? styles.toggleTextActive : styles.toggleText}>
                 ID Card
               </Text>
@@ -288,6 +286,11 @@ export default function VerificationScreen() {
             <TouchableOpacity
               style={[styles.toggleBtn, documentType === 'PASSPORT' && styles.toggleActive]}
               onPress={() => setDocumentType('PASSPORT')}>
+              <BookOpen
+                size={16}
+                color={documentType === 'PASSPORT' ? '#FFFFFF' : '#6B7280'}
+                strokeWidth={2}
+              />
               <Text style={documentType === 'PASSPORT' ? styles.toggleTextActive : styles.toggleText}>
                 Passport
               </Text>
@@ -297,9 +300,12 @@ export default function VerificationScreen() {
 
         {/* Document Front */}
         <View style={styles.card}>
-          <Text style={styles.cardLabel}>
-            {documentType === 'ID_CARD' ? 'ID Card Front' : 'Passport Photo Page'}
-          </Text>
+          <View style={styles.cardHeader}>
+            <Ionicons name="id-card-outline" size={18} color="#0F1C2E" />
+            <Text style={styles.cardLabel}>
+              {documentType === 'ID_CARD' ? 'ID Card Front' : 'Passport Photo Page'}
+            </Text>
+          </View>
           <Text style={styles.cardSubLabel}>
             Take a clear photo of the front of your document
           </Text>
@@ -311,13 +317,14 @@ export default function VerificationScreen() {
               <Image source={{ uri: documentFront.uri }} style={styles.uploadedImage} />
             ) : (
               <View style={styles.uploadPlaceholder}>
-                <Upload size={28} color="#9CA3AF" />
+                <Upload size={28} color="#9CA3AF" strokeWidth={1.5} />
                 <Text style={styles.uploadText}>Tap to upload</Text>
               </View>
             )}
           </TouchableOpacity>
           {documentFront && (
             <TouchableOpacity onPress={() => setDocumentFront(null)} style={styles.removeButton}>
+              <Ionicons name="trash-outline" size={14} color="#EF4444" />
               <Text style={styles.removeButtonText}>Remove</Text>
             </TouchableOpacity>
           )}
@@ -325,9 +332,12 @@ export default function VerificationScreen() {
 
         {/* Document Back */}
         <View style={styles.card}>
-          <Text style={styles.cardLabel}>
-            {documentType === 'ID_CARD' ? 'ID Card Back' : 'Passport Back Page'}
-          </Text>
+          <View style={styles.cardHeader}>
+            <Ionicons name="id-card-outline" size={18} color="#0F1C2E" />
+            <Text style={styles.cardLabel}>
+              {documentType === 'ID_CARD' ? 'ID Card Back' : 'Passport Back Page'}
+            </Text>
+          </View>
           <Text style={styles.cardSubLabel}>
             Take a clear photo of the back of your document
           </Text>
@@ -339,13 +349,14 @@ export default function VerificationScreen() {
               <Image source={{ uri: documentBack.uri }} style={styles.uploadedImage} />
             ) : (
               <View style={styles.uploadPlaceholder}>
-                <Upload size={28} color="#9CA3AF" />
+                <Upload size={28} color="#9CA3AF" strokeWidth={1.5} />
                 <Text style={styles.uploadText}>Tap to upload</Text>
               </View>
             )}
           </TouchableOpacity>
           {documentBack && (
             <TouchableOpacity onPress={() => setDocumentBack(null)} style={styles.removeButton}>
+              <Ionicons name="trash-outline" size={14} color="#EF4444" />
               <Text style={styles.removeButtonText}>Remove</Text>
             </TouchableOpacity>
           )}
@@ -353,7 +364,10 @@ export default function VerificationScreen() {
 
         {/* Selfie */}
         <View style={styles.card}>
-          <Text style={styles.cardLabel}>Selfie with Document</Text>
+          <View style={styles.cardHeader}>
+            <Ionicons name="camera-outline" size={18} color="#0F1C2E" />
+            <Text style={styles.cardLabel}>Selfie with Document</Text>
+          </View>
           <Text style={styles.cardSubLabel}>
             Take a selfie while holding your document next to your face
           </Text>
@@ -366,12 +380,13 @@ export default function VerificationScreen() {
             ) : (
               <View style={styles.uploadPlaceholder}>
                 <Ionicons name="camera-outline" size={28} color="#9CA3AF" />
-                <Text style={styles.uploadText}>Tap to upload selfie</Text>
+                <Text style={styles.uploadText}>Tap to take selfie</Text>
               </View>
             )}
           </TouchableOpacity>
           {selfieImage && (
             <TouchableOpacity onPress={() => setSelfieImage(null)} style={styles.removeButton}>
+              <Ionicons name="trash-outline" size={14} color="#EF4444" />
               <Text style={styles.removeButtonText}>Remove</Text>
             </TouchableOpacity>
           )}
@@ -379,7 +394,10 @@ export default function VerificationScreen() {
 
         {/* Tips */}
         <View style={styles.tipsCard}>
-          <Text style={styles.tipsTitle}>📋 Tips for a successful verification</Text>
+          <View style={styles.cardHeader}>
+            <Ionicons name="bulb-outline" size={18} color="#0F1C2E" />
+            <Text style={styles.tipsTitle}>Tips for a successful verification</Text>
+          </View>
           {[
             'Make sure documents are not expired',
             'Ensure all text is clearly readable',
@@ -408,7 +426,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F6F8',
-    paddingTop: 40,
+    paddingTop: 5,
   },
   header: {
     flexDirection: 'row',
@@ -436,7 +454,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   statusScreen: {
-    flex: 1,
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 40,
@@ -549,11 +566,16 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
   cardLabel: {
     fontSize: 15,
     fontFamily: 'Inter-SemiBold',
     color: '#0F1C2E',
-    marginBottom: 4,
   },
   cardSubLabel: {
     fontSize: 13,
@@ -564,6 +586,7 @@ const styles = StyleSheet.create({
   toggleRow: {
     flexDirection: 'row',
     gap: 8,
+    marginTop: 12,
   },
   toggleBtn: {
     flex: 1,
@@ -571,6 +594,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
   },
   toggleActive: {
     backgroundColor: '#0F1C2E',
@@ -612,6 +638,9 @@ const styles = StyleSheet.create({
   removeButton: {
     marginTop: 8,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 4,
   },
   removeButtonText: {
     fontSize: 13,
@@ -628,13 +657,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
     color: '#0F1C2E',
-    marginBottom: 12,
   },
   tipRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
+    marginTop: 10,
   },
   tipText: {
     fontSize: 13,

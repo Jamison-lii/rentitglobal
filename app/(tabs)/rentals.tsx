@@ -1,17 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  SafeAreaView, ActivityIndicator, RefreshControl, Alert
+  ActivityIndicator, RefreshControl, Alert, TextInput
 } from 'react-native';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function RentalsScreen() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
   const [rentals, setRentals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +22,15 @@ export default function RentalsScreen() {
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [, setTick] = useState(0);
+  const [paying, setPaying] = useState(false);
+  // per-rental editable MoMo number, keyed by rental id — lets the renter pay
+  // from a different number than the one saved on their profile
+  const [payPhones, setPayPhones] = useState<Record<string, string>>({});
+
+
+ const router = useRouter();
+
+
 
   const fetchRentals = async () => {
     try {
@@ -40,10 +52,11 @@ export default function RentalsScreen() {
   };
 
   useEffect(() => {
+    if (!token) return;
     fetchRentals();
-  }, []);
+  }, [token]);
 
- 
+
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -106,6 +119,147 @@ export default function RentalsScreen() {
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
   };
+
+  // returns the phone this rental will pay from — whatever the renter has typed
+  // for this specific rental, falling back to their profile number
+  const getPayPhone = (rentalId: string) => payPhones[rentalId] ?? user?.phone_number ?? '';
+
+  const setPayPhone = (rentalId: string, value: string) => {
+    setPayPhones((prev) => ({ ...prev, [rentalId]: value }));
+  };
+
+  // Polls the confirm endpoint a few times, since a MoMo approval prompt
+  // can take anywhere from a few seconds to over a minute. Stops as soon
+  // as we get a definitive SUCCESS or FAILED — never assumes success from
+  // a 200 response alone.
+  const pollPaymentStatus = async (paymentId: string, attemptsLeft = 8) => {
+    try {
+      const res = await fetch(
+        `${BASE_URL}/payments/rental/confirm/${paymentId}`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (attemptsLeft <= 0) {
+          Alert.alert('Error', data.message || 'Could not verify payment.');
+          return;
+        }
+        setTimeout(() => pollPaymentStatus(paymentId, attemptsLeft - 1), 5000);
+        return;
+      }
+
+      const status = data?.data?.payment?.status;
+
+      if (status === 'SUCCESS') {
+        Alert.alert('Success', 'Rental payment completed successfully.');
+        await fetchRentals();
+        return;
+      }
+
+      if (status === 'FAILED') {
+        Alert.alert('Payment Failed', 'The Mobile Money payment was not completed or was declined.');
+        await fetchRentals();
+        return;
+      }
+
+      // Still pending — keep polling until we run out of attempts
+      if (attemptsLeft > 0) {
+        setTimeout(() => pollPaymentStatus(paymentId, attemptsLeft - 1), 5000);
+      } else {
+        Alert.alert(
+          'Still Pending',
+          'We haven\'t received confirmation yet. Pull to refresh in a moment to check again.'
+        );
+      }
+    } catch (error) {
+      if (attemptsLeft > 0) {
+        setTimeout(() => pollPaymentStatus(paymentId, attemptsLeft - 1), 5000);
+      } else {
+        Alert.alert('Error', 'Could not verify payment.');
+      }
+    }
+  };
+
+  const handlePayRental = async (rentalId: string) => {
+  const phone = getPayPhone(rentalId).trim();
+
+  if (!phone) {
+    Alert.alert('Phone Number Required', 'Please enter the Mobile Money number to pay from.');
+    return;
+  }
+
+  Alert.alert(
+    'Pay Rental',
+    `Do you want to proceed with this payment using ${phone}?`,
+    [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Yes, Pay',
+        onPress: async () => {
+          try {
+            setPaying(true);
+
+            const res = await fetch(
+              `${BASE_URL}/payments/rental`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  rental_id: rentalId,
+                  phone,
+                }),
+              }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+              Alert.alert(
+                'Payment Failed',
+                data.message || 'Failed to initiate payment.'
+              );
+              return;
+            }
+
+            const paymentId = data.data.payment.id;
+
+            Alert.alert(
+              'Payment Initiated',
+              'Check your phone and approve the Mobile Money payment request.'
+            );
+
+            // Give the user a few seconds to see/approve the prompt, then
+            // start polling for the real outcome instead of assuming success.
+            setTimeout(() => {
+              pollPaymentStatus(paymentId);
+            }, 5000);
+
+            console.log(data);
+
+          } catch (err) {
+            Alert.alert(
+              'Error',
+              'Network error. Please try again.'
+            );
+          } finally {
+            setPaying(false);
+          }
+        },
+      },
+    ]
+  );
+};
+
 
   const handleCancelRental = async (rentalId: string) => {
     Alert.alert(
@@ -255,6 +409,34 @@ export default function RentalsScreen() {
               </View>
             </View>
 
+            {/* WhatsApp payment notice — only for ACCEPTED rentals */}
+{rental.status === 'ACCEPTED' && (
+  <>
+    <View style={styles.rentalDivider} />
+    <View style={styles.whatsappBox}>
+      <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
+      <Text style={styles.whatsappText}>
+        Your rental has been accepted! You will be contacted shortly via WhatsApp to complete your payment of{' '}
+        <Text style={styles.whatsappAmount}>{rental.total_price} CFA</Text>.
+        Please keep your phone nearby.
+      </Text>
+    </View>
+  </>
+)}
+
+{rental.status === 'REQUESTED' && (
+  <>
+    <View style={styles.rentalDivider} />
+    <View style={styles.whatsappBox}>
+      <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
+      <Text style={styles.whatsappText}>
+        Your rental is being reviewed You will be contacted shortly via WhatsApp for details regarding your rental request.If it takes more than 5 minutes contact support via the profile page.
+        Please keep your phone nearby.
+      </Text>
+    </View>
+  </>
+)}
+
             {/* Cancel or support message */}
             {(canCancel || showSupportMessage) && (
               <View style={styles.rentalDivider} />
@@ -276,21 +458,51 @@ export default function RentalsScreen() {
                   Cancellation window has passed. Please{' '}
                   <Text
                     style={styles.supportLink}
-                    onPress={() => console.log('contact support')}>
+                    onPress={() => router.push('/(tabs)/profile')}>
                     contact support
                   </Text>{' '}
                   to request a cancellation.
                 </Text>
               </View>
             )}
+
+  {rental.payments?.some((p: any) => p.status === "SUCCESS") ? (
+  <Text style={{ color: "green", fontWeight: "bold" }}>
+    Paid ✓
+  </Text>
+) : (
+  rental.status === 'ACCEPTED' && (
+    <View style={styles.payBox}>
+      <Text style={styles.payPhoneLabel}>Pay from this Mobile Money number</Text>
+      <TextInput
+        style={styles.payPhoneInput}
+        placeholder="e.g. 6XXXXXXXX"
+        placeholderTextColor="#9CA3AF"
+        keyboardType="phone-pad"
+        value={getPayPhone(rental.id)}
+        onChangeText={(text) => setPayPhone(rental.id, text)}
+      />
+      <TouchableOpacity
+        style={styles.payButton}
+        onPress={() => handlePayRental(rental.id)}
+        disabled={paying}
+      >
+        <Text style={styles.payButtonText}>
+          {paying ? "Processing..." : `Pay ${rental.total_price} FCFA`}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  )
+)}
           </>
+
         )}
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <Text style={styles.title}>My Rentals</Text>
       </View>
@@ -361,14 +573,49 @@ export default function RentalsScreen() {
             )}
           </View>
         )}
+
+
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  payBox: {
+    marginTop: 10,
+  },
+  payPhoneLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
+    color: '#6B7280',
+    marginBottom: 6,
+  },
+  payPhoneInput: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#0F1C2E',
+    marginBottom: 10,
+  },
+  payButton: {
+  backgroundColor: "#007A5E",
+  paddingVertical: 12,
+  borderRadius: 8,
+  alignItems: "center",
+},
+
+payButtonText: {
+  color: "#FFFFFF",
+  fontSize: 16,
+  fontWeight: "600",
+},
   container: {
-    paddingTop: 40,
+    paddingTop: 10,
     flex: 1,
     backgroundColor: '#F5F6F8',
   },
@@ -598,4 +845,25 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
   },
+  whatsappBox: {
+  flexDirection: 'row',
+  alignItems: 'flex-start',
+  backgroundColor: '#F0FDF4',
+  padding: 12,
+  borderRadius: 12,
+  gap: 10,
+  borderWidth: 1,
+  borderColor: '#BBF7D0',
+},
+whatsappText: {
+  fontSize: 13,
+  fontFamily: 'Inter-Regular',
+  color: '#166534',
+  flex: 1,
+  lineHeight: 20,
+},
+whatsappAmount: {
+  fontFamily: 'Inter-Bold',
+  color: '#166534',
+},
 });

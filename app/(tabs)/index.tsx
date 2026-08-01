@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, SafeAreaView, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ItemCard } from '@/components/ItemCard';
 import { CategoryChip } from '@/components/CategoryChip';
 import { SearchBar } from '@/components/SearchBar';
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const categories = [
@@ -91,7 +92,7 @@ export default function ExploreScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']} >
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -160,7 +161,7 @@ export default function ExploreScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 
@@ -168,7 +169,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F6F8',
-    paddingTop: 40,
+    
   },
   scrollView: {
     flex: 1,

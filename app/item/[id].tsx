@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, Image, TouchableOpacity,
-  StyleSheet, SafeAreaView, ActivityIndicator,
+  StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Share2, Clock, Camera, Radio } from 'lucide-react-native';
+import { ArrowLeft, Share2, Clock, Camera, Radio, ChevronUp, ChevronDown  } from 'lucide-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CTAButton } from '@/components/CTAButton';
 import { useAuth } from '@/context/AuthContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React from 'react';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -21,6 +22,7 @@ export default function ItemDetailScreen() {
   const [listing, setListing] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [policyExpanded, setPolicyExpanded] = useState(false);
 
   useEffect(() => {
     fetchListing();
@@ -197,20 +199,29 @@ export default function ItemDetailScreen() {
           </View>
 
           <View style={styles.depositCard}>
-            <View style={styles.depositHeader}>
-              <Text style={styles.depositTitle}>Refundable Security Deposit</Text>
-              <Text style={styles.depositAmount}>500 CFA</Text>
-            </View>
-            <Text style={styles.depositSubtext}>
-              Protected by RentIt Guarantee.{' '}
-              <Text style={styles.note}>Note</Text> A rental request can only be canceled within
-              20 minutes of placing the request. After that, the owner has the right to accept or
-              decline the cancellation based on their cancellation policy.
-            </Text>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text style={styles.learnMore}>Learn More</Text>
-            </TouchableOpacity>
-          </View>
+  <TouchableOpacity
+    style={styles.depositHeader}
+    onPress={() => setPolicyExpanded(!policyExpanded)}
+    activeOpacity={0.8}>
+    <Text style={styles.depositTitle}>RentIt Policy</Text>
+    {policyExpanded
+      ? <ChevronUp size={18} color="#9CA3AF" />
+      : <ChevronDown size={18} color="#9CA3AF" />
+    }
+  </TouchableOpacity>
+
+  {policyExpanded && (
+    <Text style={styles.depositSubtext}>
+      Protected by RentIt Guarantee.{' '}
+      <Text style={styles.note}>Note </Text>
+      A rental request can only be canceled within 20 minutes of placing the request. After that, the owner has the right to accept or decline the cancellation based on their cancellation policy.
+      {'\n\n'}
+      If you need to cancel after 20 minutes, please contact the owner directly to discuss the cancellation and any potential fees that may apply.
+      {'\n\n'}
+      Also if there are any issues with the item during the rental period, please report it to RentIt support immediately for assistance.
+    </Text>
+  )}
+</View>
 
           <View style={styles.descriptionSection}>
             <Text style={styles.sectionTitle}>Description</Text>
@@ -265,7 +276,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     backgroundColor: '#F5F6F8',
-    paddingTop: 40,
+    paddingTop: 10,
   },
   headerButton: {
     width: 40,
@@ -502,4 +513,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
   },
+
+  
 });

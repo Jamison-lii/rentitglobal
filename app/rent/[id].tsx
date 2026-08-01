@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, SafeAreaView, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, TouchableOpacity,
   ActivityIndicator, ScrollView, Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -8,6 +8,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { CTAButton } from '@/components/CTAButton';
 import { ArrowLeft } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';4
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -76,10 +78,15 @@ const minRentalDays = selectedItems.length > 0
     Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
   );
 
+  const isDelivery = pickupMethod === 'DELIVERY'? true : false;
+
   const totalPrice = selectedItems.reduce((acc, item) => {
     const pricePerDay = item.price_per_day
       ? parseFloat(item.price_per_day)
       : parseFloat(item.price_per_hour) * 24;
+      if(isDelivery) {
+        return acc + pricePerDay * item.quantity * rentalDays + 2000; // flat delivery fee of 2000 CFA
+      } 
     return acc + pricePerDay * item.quantity * rentalDays;
   }, 0);
 
@@ -113,7 +120,7 @@ const minRentalDays = selectedItems.length > 0
     );
   };
 
-  const handleSubmit = async () => {
+ const handleSubmit = async () => {
     if (selectedItems.length === 0) {
       Alert.alert('Error', 'Please select at least one item to rent.');
       return;
@@ -158,13 +165,29 @@ const minRentalDays = selectedItems.length > 0
       const data = await res.json();
 
       if (!res.ok) {
+        // handle verification required error specifically
+        if (data.requires_verification) {
+          Alert.alert(
+            'Verification Required',
+            data.message,
+            [
+              { text: 'Not Now', style: 'cancel' },
+              {
+                text: 'Verify Now',
+                onPress: () => router.push('/verification'),
+              },
+            ]
+          );
+          return;
+        }
+
         Alert.alert('Error', data.message || 'Failed to submit rental request.');
         return;
       }
 
       Alert.alert(
-        'Request Submitted ',
-        'Your rental request has been sent. you will be contacted shortly',
+        'Request Submitted! ',
+        'Your rental request has been sent. The owner will review and respond shortly.',
         [{ text: 'OK', onPress: () => router.replace('/(tabs)/rentals') }]
       );
     } catch (err) {
@@ -267,6 +290,17 @@ const minRentalDays = selectedItems.length > 0
                     </View>
                   </View>
                 )}
+
+
+                  {/* verification warning goes here — shows when item is selected and requires verification */}
+      {selected && item.requires_verification && (
+        <View style={styles.verificationWarning}>
+          <Ionicons name="shield-outline" size={14} color="#F59E0B" />
+          <Text style={styles.verificationWarningText}>
+            This item requires identity verification
+          </Text>
+        </View>
+      )}
               </View>
             );
           })}
@@ -395,7 +429,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F6F8',
     padding: 20,
-    paddingTop: 50,
+    paddingTop: 10,
   },
   header: {
     flexDirection: 'row',
@@ -601,4 +635,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0F1C2E',
   },
+
+  verificationWarning: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 6,
+  backgroundColor: '#FFFBEB',
+  padding: 8,
+  borderRadius: 8,
+  marginTop: 4,
+  marginBottom: 8,
+},
+verificationWarningText: {
+  fontSize: 12,
+  fontFamily: 'Inter-Regular',
+  color: '#F59E0B',
+  flex: 1,
+},
 });

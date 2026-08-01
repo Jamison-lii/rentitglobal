@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, Image, TouchableOpacity, StyleSheet,
-  SafeAreaView, TextInput, Alert, ActivityIndicator, Modal
+  Linking, View, Text, ScrollView, Image, TouchableOpacity, StyleSheet,
+   TextInput, Alert, ActivityIndicator, Modal
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronRight, CreditCard, Shield, Settings, Headphones, Camera, X, Check } from 'lucide-react-native';
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from 'expo-router';
+
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { user, token, logout, updateUser } = useAuth();
 
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -36,6 +40,8 @@ const [verificationLoading, setVerificationLoading] = useState(true);
     await logout();
     router.replace('/login');
   };
+
+ 
 
   const handlePickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -147,37 +153,28 @@ const fetchVerificationStatus = async () => {
   }
 };
 
-  const menuItems = [
-    {
-      id: '1',
-      icon: CreditCard,
-      label: 'Payment Methods',
-      onPress: () => console.log('Payment Methods'),
+ const menuItems: Array<{ id: string; icon: typeof Headphones; label: string; onPress: () => void; badge?: string; badgeColor?: string; }> = [
+  {
+    id: '1',
+    icon: Headphones,
+    label: 'Elite Concierge Support',
+    onPress: () => {
+      const phoneNumber = '+237695425977'; // replace with your whatsapp number
+      const url = `whatsapp://send?phone=${phoneNumber}`;
+      Linking.openURL(url).catch(() => {
+        Alert.alert('Error', 'WhatsApp is not installed on this device.');
+      });
     },
-    {
-      id: '2',
-      icon: Shield,
-      label: 'Identity Verification',
-      badge: user?.is_verified ? 'VERIFIED' : 'PENDING',
-      badgeColor: user?.is_verified ? '#10B981' : '#F59E0B',
-      onPress: () => console.log('Identity Verification'),
-    },
-    {
-      id: '3',
-      icon: Settings,
-      label: 'Settings & Privacy',
-      onPress: () => console.log('Settings & Privacy'),
-    },
-    {
-      id: '4',
-      icon: Headphones,
-      label: 'Elite Concierge Support',
-      onPress: () => console.log('Elite Concierge Support'),
-    },
-  ];
-
+  },
+  /* {
+    id: '2',
+     icon: Settings,
+    label: 'Create a Listing',
+     onPress: () => console.log('Settings & Privacy'),
+   },*/
+];
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <Text style={styles.title}>Profile & Trust</Text>
       </View>
@@ -389,6 +386,52 @@ const fetchVerificationStatus = async () => {
               </TouchableOpacity>
             ))}
           </View>
+            <Text style={styles.menuTitle}>RENTAL MANAGEMENT</Text>
+          <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => router.push('/listing-request')}
+                activeOpacity={0.7}>
+                <View style={styles.menuItemLeft}>
+                  <View style={styles.menuItemIcon}>
+                    <CreditCard size={20} color="#6B7280" strokeWidth={2} />
+                  </View>
+                  <Text style={styles.menuItemLabel}>Create a Listing</Text>
+                </View>
+                <View style={styles.menuItemRight}>
+                  <ChevronRight size={20} color="#9CA3AF" strokeWidth={2} />
+                </View>
+              </TouchableOpacity>
+
+               <TouchableOpacity
+                style={styles.menuItem}
+               onPress={() => router.push('/owner-section' as any)}
+                activeOpacity={0.7}>
+                <View style={styles.menuItemLeft}>
+                  <View style={styles.menuItemIcon}>
+                    <CreditCard size={20} color="#6B7280" strokeWidth={2} />
+                  </View>
+                  <Text style={styles.menuItemLabel}>View Requests on your items</Text>
+                </View>
+                <View style={styles.menuItemRight}>
+                  <ChevronRight size={20} color="#9CA3AF" strokeWidth={2} />
+                </View>
+              </TouchableOpacity>
+
+
+               <TouchableOpacity
+                style={styles.menuItem}
+               onPress={() => router.push('/transactions' as any)} 
+                activeOpacity={0.7}>
+                <View style={styles.menuItemLeft}>
+                  <View style={styles.menuItemIcon}>
+                    <CreditCard size={20} color="#6B7280" strokeWidth={2} />
+                  </View>
+                  <Text style={styles.menuItemLabel}>Transactions</Text>
+                </View>
+                <View style={styles.menuItemRight}>
+                  <ChevronRight size={20} color="#9CA3AF" strokeWidth={2} />
+                </View>
+              </TouchableOpacity>
 
           <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.7}>
             <Text style={styles.signOutText}>Sign Out of RentIt</Text>
@@ -469,14 +512,15 @@ const fetchVerificationStatus = async () => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 40,
+    paddingTop: 5,
     flex: 1,
     backgroundColor: '#F5F6F8',
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 10,
     paddingBottom: 16,
+    
   },
   title: {
     fontSize: 28,

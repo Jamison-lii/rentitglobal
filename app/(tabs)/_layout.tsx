@@ -1,30 +1,31 @@
 import { Tabs, useRouter } from 'expo-router';
 import { Search, Calendar, User } from 'lucide-react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
 import '../../global.css';
 import { useAuth } from '../../context/AuthContext';
-import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
-   const { user, loading } = useAuth();
-    const router = useRouter();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
 
-    useEffect(() => {
-        if (!loading && !user) {
-            router.replace('/login');
-        }
-    }, [user, loading]);
-
-    if (loading) {
-        return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color="#0F1C2E" />
-            </View>
-        );
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login');
     }
+  }, [user, loading]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0F1C2E" />
+      </View>
+    );
+  }
+
   return (
-    
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -34,9 +35,9 @@ export default function TabLayout() {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#E5E7EB',
-          paddingBottom: 8,
+          paddingBottom: insets.bottom || 8,
           paddingTop: 8,
-          height: 65,
+          height: 65 + (insets.bottom || 0),
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -71,6 +72,5 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
-    
   );
 }
