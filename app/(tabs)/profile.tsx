@@ -4,7 +4,7 @@ import {
    TextInput, Alert, ActivityIndicator, Modal
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronRight, CreditCard, Shield, Settings, Headphones, Camera, X, Check } from 'lucide-react-native';
+import { ChevronRight, CreditCard, Shield, Settings, Headphones, Camera, X, Check, PackagePlus, Inbox, Receipt } from 'lucide-react-native';
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
@@ -394,7 +394,7 @@ const fetchVerificationStatus = async () => {
                 activeOpacity={0.7}>
                 <View style={styles.menuItemLeft}>
                   <View style={styles.menuItemIcon}>
-                    <CreditCard size={20} color="#6B7280" strokeWidth={2} />
+                     <PackagePlus size={20} color="#6B7280" strokeWidth={2} />
                   </View>
                   <Text style={styles.menuItemLabel}>Create a Listing</Text>
                 </View>
@@ -409,7 +409,7 @@ const fetchVerificationStatus = async () => {
                 activeOpacity={0.7}>
                 <View style={styles.menuItemLeft}>
                   <View style={styles.menuItemIcon}>
-                    <CreditCard size={20} color="#6B7280" strokeWidth={2} />
+                    <Inbox size={20} color="#6B7280" strokeWidth={2} />
                   </View>
                   <Text style={styles.menuItemLabel}>View Requests on your items</Text>
                 </View>
@@ -425,7 +425,7 @@ const fetchVerificationStatus = async () => {
                 activeOpacity={0.7}>
                 <View style={styles.menuItemLeft}>
                   <View style={styles.menuItemIcon}>
-                    <CreditCard size={20} color="#6B7280" strokeWidth={2} />
+                   <Receipt size={20} color="#6B7280" strokeWidth={2} />
                   </View>
                   <Text style={styles.menuItemLabel}>Transactions</Text>
                 </View>

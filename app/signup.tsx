@@ -32,6 +32,7 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const { login } = useAuth();
 
   const handleSignup = async () => {
@@ -68,6 +69,11 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    if (!agreedToTerms) {
+      setError('You must agree to the Terms and Conditions to create an account.');
       return;
     }
 
@@ -142,7 +148,7 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>
-              Phone number <Text style={styles.optional}>(optional)</Text>
+             Whatsapp Phone number <Text style={styles.optional}>(so you can easily be contacted on your rental)</Text>
             </Text>
             <TextInput
               value={phoneNumber}
@@ -201,13 +207,34 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   </View>
 </View>
 
+          {/* Terms & Conditions gate — must be checked before signup is allowed */}
+          <View style={styles.termsRow}>
+            <TouchableOpacity
+              onPress={() => setAgreedToTerms(!agreedToTerms)}
+              activeOpacity={0.7}
+              style={styles.checkbox}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons
+                name={agreedToTerms ? 'checkbox' : 'square-outline'}
+                size={22}
+                color={agreedToTerms ? '#0F1C2E' : '#9CA3AF'}
+              />
+            </TouchableOpacity>
+            <Text style={styles.termsText}>
+              I agree to RentIt's{' '}
+              <Text style={styles.termsLink} onPress={() => router.push('/terms')}>
+                Terms and Conditions
+              </Text>
+            </Text>
+          </View>
+
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           <TouchableOpacity
-            style={[styles.primaryButton, loading && styles.buttonDisabled]}
+            style={[styles.primaryButton, (loading || !agreedToTerms) && styles.buttonDisabled]}
             onPress={handleSignup}
             activeOpacity={0.8}
-            disabled={loading}>
+            disabled={loading || !agreedToTerms}>
             <Text style={styles.primaryButtonText}>
               {loading ? 'Creating account...' : 'Sign Up'}
             </Text>
@@ -272,6 +299,26 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#111827',
     backgroundColor: '#F8FAFC',
+  },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 18,
+    gap: 10,
+  },
+  checkbox: {
+    marginTop: 1,
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: 'Inter-Regular',
+    color: '#374151',
+    lineHeight: 19,
+  },
+  termsLink: {
+    fontFamily: 'Inter-SemiBold',
+    color: '#2F80ED',
   },
   errorText: {
     color: '#DC2626',

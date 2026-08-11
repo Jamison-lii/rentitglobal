@@ -4,7 +4,7 @@ import {
   ActivityIndicator, RefreshControl, Image, Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, ChevronDown, ChevronUp, Check, X } from 'lucide-react-native';
+import { ArrowLeft, ChevronDown, ChevronUp, Check, X, Lock } from 'lucide-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -39,8 +39,7 @@ type OwnerRental = {
 
 export default function OwnerRentalsScreen() {
   const router = useRouter();
-  const { token } = useAuth();
-   const { authFetch } = useAuth();
+  const { token, authFetch } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending');
   const [rentals, setRentals] = useState<OwnerRental[]>([]);
@@ -52,9 +51,7 @@ export default function OwnerRentalsScreen() {
 
   const fetchOwnerRentals = async () => {
     try {
-      const res = await authFetch(`${BASE_URL}/rentals/owner`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch(`${BASE_URL}/rentals/owner`);
       const data = await res.json();
 
       if (!res.ok) {
@@ -121,12 +118,9 @@ export default function OwnerRentalsScreen() {
   const updateRentalStatus = async (rentalId: string, status: 'ACCEPTED' | 'REJECTED') => {
     setActingId(rentalId);
     try {
-      const res = await fetch(`${BASE_URL}/rentals/${rentalId}/status`, {
+      const res = await authFetch(`${BASE_URL}/rentals/${rentalId}/status`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
 
@@ -151,7 +145,7 @@ export default function OwnerRentalsScreen() {
   const handleAccept = (rental: OwnerRental) => {
     Alert.alert(
       'Accept Rental Request',
-      `Accept ${rental.user.first_name}'s request for "${rental.listing.title}"?`,
+      `Accept ${rental.user.first_name}'s request for "${rental.listing.title}"? You'll be able to see their contact details and message them on WhatsApp once accepted.`,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Accept', onPress: () => updateRentalStatus(rental.id, 'ACCEPTED') },
@@ -171,38 +165,38 @@ export default function OwnerRentalsScreen() {
   };
 
   // Normalizes a stored phone number into WhatsApp's expected format:
-// digits only, no "+", no leading zero, with the 237 country code present.
-// Adjust the default country code if you ever support renters outside Cameroon.
-const formatWhatsAppNumber = (raw: string): string => {
-  let digits = raw.replace(/\D/g, ''); // strip +, spaces, dashes, everything non-numeric
+  // digits only, no "+", no leading zero, with the 237 country code present.
+  // Adjust the default country code if you ever support renters outside Cameroon.
+  const formatWhatsAppNumber = (raw: string): string => {
+    let digits = raw.replace(/\D/g, ''); // strip +, spaces, dashes, everything non-numeric
 
-  if (digits.startsWith('237')) {
-    return digits;
-  }
+    if (digits.startsWith('237')) {
+      return digits;
+    }
 
-  if (digits.startsWith('0')) {
-    digits = digits.slice(1); // drop a leading local trunk 0, if present
-  }
+    if (digits.startsWith('0')) {
+      digits = digits.slice(1); // drop a leading local trunk 0, if present
+    }
 
-  return `237${digits}`;
-};
+    return `237${digits}`;
+  };
 
-const handleWhatsApp = (rental: OwnerRental) => {
-  if (!rental.user.phone_number) {
-    Alert.alert('No Phone Number', 'This renter hasn\u2019t added a phone number to their profile.');
-    return;
-  }
+  const handleWhatsApp = (rental: OwnerRental) => {
+    if (!rental.user.phone_number) {
+      Alert.alert('No Phone Number', 'This renter hasn\u2019t added a phone number to their profile.');
+      return;
+    }
 
-  const formattedPhone = formatWhatsAppNumber(rental.user.phone_number);
+    const formattedPhone = formatWhatsAppNumber(rental.user.phone_number);
 
-  const message = encodeURIComponent(
-    `Hi ${rental.user.first_name}, this is regarding your rental request for "${rental.listing.title}" on RentIt.`
-  );
+    const message = encodeURIComponent(
+      `Hi ${rental.user.first_name}, this is regarding your rental request for "${rental.listing.title}" on RentIt.`
+    );
 
-  Linking.openURL(`whatsapp://send?phone=${formattedPhone}&text=${message}`).catch(() => {
-    Alert.alert('Error', 'WhatsApp is not installed on this device.');
-  });
-};
+    Linking.openURL(`whatsapp://send?phone=${formattedPhone}&text=${message}`).catch(() => {
+      Alert.alert('Error', 'WhatsApp is not installed on this device.');
+    });
+  };
 
   if (loading) {
     return (
@@ -217,6 +211,10 @@ const handleWhatsApp = (rental: OwnerRental) => {
   const renderRentalCard = (rental: OwnerRental) => {
     const isExpanded = expandedId === rental.id;
     const isActing = actingId === rental.id;
+    // Contact details (WhatsApp, phone, email) only unlock once the owner has
+    // committed to the rental by accepting it — protects renter privacy from
+    // requests the owner hasn't agreed to yet.
+    const isContactUnlocked = rental.status !== 'REQUESTED';
 
     return (
       <View key={rental.id} style={styles.rentalCard}>
@@ -226,17 +224,22 @@ const handleWhatsApp = (rental: OwnerRental) => {
           style={styles.rentalHeader}>
           <Image
             source={{
-              uri: rental.user.profile_image ??
-                'https://ui-avatars.com/api/?name=' +
-                encodeURIComponent(`${rental.user.first_name} ${rental.user.last_name}`) +
-                '&background=0F1C2E&color=fff&size=100',
+              uri: isContactUnlocked
+                ? (rental.user.profile_image ??
+                    'https://ui-avatars.com/api/?name=' +
+                    encodeURIComponent(`${rental.user.first_name} ${rental.user.last_name}`) +
+                    '&background=0F1C2E&color=fff&size=100')
+                : 'https://ui-avatars.com/api/?name=' +
+                    encodeURIComponent(rental.user.first_name) +
+                    '&background=0F1C2E&color=fff&size=100',
             }}
             style={styles.avatar}
           />
           <View style={styles.rentalInfo}>
             <View style={styles.nameRow}>
               <Text style={styles.renterName} numberOfLines={1}>
-                {rental.user.first_name} {rental.user.last_name}
+                {/* First name only until accepted — full name + everything else unlocks after */}
+                {isContactUnlocked ? `${rental.user.first_name} ${rental.user.last_name}` : rental.user.first_name}
               </Text>
               {rental.user.is_verified && (
                 <Ionicons name="checkmark-circle" size={14} color="#2F80ED" />
@@ -314,20 +317,31 @@ const handleWhatsApp = (rental: OwnerRental) => {
 
             <View style={styles.divider} />
 
-            <View style={styles.contactRow}>
-              <Text style={styles.contactLabel}>Email: {rental.user.email}</Text>
-              {rental.user.phone_number && (
-                <Text style={styles.contactLabel}>Phone: {rental.user.phone_number}</Text>
-              )}
-            </View>
+            {isContactUnlocked ? (
+              <View style={styles.contactRow}>
+                <Text style={styles.contactLabel}>Email: {rental.user.email}</Text>
+                {rental.user.phone_number && (
+                  <Text style={styles.contactLabel}>Phone: {rental.user.phone_number}</Text>
+                )}
+              </View>
+            ) : (
+              <View style={styles.lockedBox}>
+                <Lock size={14} color="#9CA3AF" />
+                <Text style={styles.lockedText}>
+                  Contact details are hidden until you accept this request.
+                </Text>
+              </View>
+            )}
 
             <View style={styles.actionsRow}>
-              <TouchableOpacity
-                style={styles.whatsappButton}
-                onPress={() => handleWhatsApp(rental)}>
-                <Ionicons name="logo-whatsapp" size={16} color="#FFFFFF" />
-                <Text style={styles.whatsappButtonText}>WhatsApp</Text>
-              </TouchableOpacity>
+              {isContactUnlocked && (
+                <TouchableOpacity
+                  style={styles.whatsappButton}
+                  onPress={() => handleWhatsApp(rental)}>
+                  <Ionicons name="logo-whatsapp" size={16} color="#FFFFFF" />
+                  <Text style={styles.whatsappButtonText}>WhatsApp</Text>
+                </TouchableOpacity>
+              )}
 
               {rental.status === 'REQUESTED' && (
                 <>
@@ -638,6 +652,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Regular',
     color: '#6B7280',
+  },
+  lockedBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F9FAFB',
+    padding: 10,
+    borderRadius: 10,
+  },
+  lockedText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#9CA3AF',
+    flex: 1,
   },
   actionsRow: {
     flexDirection: 'row',
