@@ -23,6 +23,7 @@ export default function ItemDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [policyExpanded, setPolicyExpanded] = useState(false);
+   const { authFetch } = useAuth();
 
   useEffect(() => {
     fetchListing();
@@ -30,7 +31,7 @@ export default function ItemDetailScreen() {
 
   const fetchListing = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/listings/${id}`);
+      const res = await authFetch(`${BASE_URL}/listings/${id}`);
       const data = await res.json();
 
       if (!res.ok) {
@@ -100,9 +101,9 @@ export default function ItemDetailScreen() {
           <ArrowLeft size={24} color="#0F1C2E" strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Item Details</Text>
-        <TouchableOpacity onPress={handleShare} style={styles.headerButton} activeOpacity={0.7}>
+       {/*  <TouchableOpacity onPress={handleShare} style={styles.headerButton} activeOpacity={0.7}>
           <Share2 size={24} color="#0F1C2E" strokeWidth={2} />
-        </TouchableOpacity>
+        </TouchableOpacity>*/}
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -510,6 +511,7 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: '#FFFFFF',
     padding: 20,
+    paddingBottom: 40,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
   },

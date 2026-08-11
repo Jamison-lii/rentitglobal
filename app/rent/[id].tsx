@@ -7,16 +7,18 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { CTAButton } from '@/components/CTAButton';
 import { ArrowLeft } from 'lucide-react-native';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth  } from '@/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';4
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
+
 export default function RentRequestScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { token } = useAuth();
+   const { authFetch } = useAuth();
 
   const [listing, setListing] = useState<any>(null);
   const [selectedItems, setSelectedItems] = useState<{
@@ -44,7 +46,7 @@ export default function RentRequestScreen() {
 
   const fetchListing = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/listings/${id}`);
+      const res = await authFetch(`${BASE_URL}/listings/${id}`);
       const data = await res.json();
 
       if (!res.ok) {
@@ -85,12 +87,13 @@ const minRentalDays = selectedItems.length > 0
       ? parseFloat(item.price_per_day)
       : parseFloat(item.price_per_hour) * 24;
       if(isDelivery) {
-        return acc + pricePerDay * item.quantity * rentalDays + 2000; // flat delivery fee of 2000 CFA
+        return acc + pricePerDay * item.quantity * rentalDays ; // you can place a flat delivery fee of 2000 CFA
       } 
     return acc + pricePerDay * item.quantity * rentalDays;
   }, 0);
 
   const formatDate = (date: Date) => date.toISOString().split('T')[0];
+ 
 
   const toggleItem = (item: any) => {
     setSelectedItems((prev) => {

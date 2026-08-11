@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function RentalsScreen() {
-  const { token, user } = useAuth();
+  const { token, user, authFetch } = useAuth();
   const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
   const [rentals, setRentals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,7 @@ export default function RentalsScreen() {
 
   const fetchRentals = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/rentals`, {
+      const res = await authFetch(`${BASE_URL}/rentals`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -134,7 +134,7 @@ export default function RentalsScreen() {
   // a 200 response alone.
   const pollPaymentStatus = async (paymentId: string, attemptsLeft = 8) => {
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${BASE_URL}/payments/rental/confirm/${paymentId}`,
         {
           method: 'PUT',
@@ -206,7 +206,7 @@ export default function RentalsScreen() {
           try {
             setPaying(true);
 
-            const res = await fetch(
+            const res = await authFetch(
               `${BASE_URL}/payments/rental`,
               {
                 method: 'POST',
@@ -272,7 +272,7 @@ export default function RentalsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const res = await fetch(`${BASE_URL}/rentals/${rentalId}/status`, {
+              const res = await authFetch(`${BASE_URL}/rentals/${rentalId}/status`, {
                 method: 'PUT',
                 headers: {
                   'Content-Type': 'application/json',

@@ -39,6 +39,7 @@ type EditForm = {
 export default function MyListingsScreen() {
   const router = useRouter();
   const { token } = useAuth();
+   const { authFetch } = useAuth();
 
   // listings state
   const [listings, setListings] = useState<Listing[]>([]);
@@ -63,7 +64,7 @@ export default function MyListingsScreen() {
 
   const fetchListings = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/listings/mine`, {
+      const res = await authFetch(`${BASE_URL}/listings/mine`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();

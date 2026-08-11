@@ -18,7 +18,7 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function VerificationScreen() {
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, authFetch } = useAuth();
 
   const [verification, setVerification] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,7 @@ export default function VerificationScreen() {
 
   const fetchVerificationStatus = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/verification/status`, {
+      const res = await authFetch(`${BASE_URL}/verification/status`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -108,7 +108,7 @@ export default function VerificationScreen() {
         type: 'image/jpeg',
       } as any);
 
-      const res = await fetch(`${BASE_URL}/verification/submit`, {
+      const res = await authFetch(`${BASE_URL}/verification/submit`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,

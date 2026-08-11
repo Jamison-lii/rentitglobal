@@ -15,6 +15,7 @@ import { useNavigation } from 'expo-router';
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function ProfileScreen() {
+   const { authFetch } = useAuth();
   const router = useRouter();
   const navigation = useNavigation();
   const { user, token, logout, updateUser } = useAuth();
@@ -69,7 +70,7 @@ const [verificationLoading, setVerificationLoading] = useState(true);
         type: 'image/jpeg',
       } as any);
 
-      const res = await fetch(`${BASE_URL}/auth/update`, {
+      const res = await authFetch(`${BASE_URL}/auth/update`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -100,7 +101,7 @@ const [verificationLoading, setVerificationLoading] = useState(true);
     setUpdating(true);
 
     try {
-      const res = await fetch(`${BASE_URL}/auth/update`, {
+      const res = await authFetch(`${BASE_URL}/auth/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -137,7 +138,7 @@ const [verificationLoading, setVerificationLoading] = useState(true);
 
 const fetchVerificationStatus = async () => {
   try {
-    const res = await fetch(`${BASE_URL}/verification/status`, {
+    const res = await authFetch(`${BASE_URL}/verification/status`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 

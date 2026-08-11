@@ -8,12 +8,13 @@ import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 type FilterTab = 'ALL' | 'RENTAL' | 'DEPOSIT';
 
 export default function TransactionsScreen() {
-  const { token } = useAuth();
+  const { token, authFetch } = useAuth();
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -22,7 +23,7 @@ export default function TransactionsScreen() {
 
   const fetchPayments = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/payments/history`, {
+      const res = await authFetch(`${BASE_URL}/payments/history`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();

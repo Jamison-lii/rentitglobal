@@ -40,6 +40,7 @@ type OwnerRental = {
 export default function OwnerRentalsScreen() {
   const router = useRouter();
   const { token } = useAuth();
+   const { authFetch } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending');
   const [rentals, setRentals] = useState<OwnerRental[]>([]);
@@ -51,7 +52,7 @@ export default function OwnerRentalsScreen() {
 
   const fetchOwnerRentals = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/rentals/owner`, {
+      const res = await authFetch(`${BASE_URL}/rentals/owner`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
