@@ -28,9 +28,9 @@ export function SearchBar({
         />
       </View>
 
-      <TouchableOpacity style={styles.filterButton} onPress={onFilterPress} activeOpacity={0.7}>
+    {/*   <TouchableOpacity style={styles.filterButton} onPress={onFilterPress} activeOpacity={0.7}>
         <SlidersHorizontal size={20} color="#0F1C2E" strokeWidth={2} />
-      </TouchableOpacity>
+      </TouchableOpacity>*/}
     </View>
   );
 }
